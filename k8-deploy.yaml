@@ -1,0 +1,92 @@
+#creates Replicaset
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shipping
+  labels:
+    app: shipping
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 20
+  selector:
+    matchLabels:
+      app: shipping
+  template:
+    metadata:
+      labels:
+        app: shipping
+    spec:
+      containers:
+      - name: shipping
+        image: 164910480407.dkr.ecr.us-east-1.amazonaws.com/shipping:009
+        ports:
+        - containerPort: 8080
+        envFrom:
+          - configMapRef:
+                name: shipping-configmap
+
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shipping-configmap
+data:
+  CART_ENDPOINT: "cart-svc:8080"
+  DB_HOST: "terraform-20231208055823687600000002.cecqgmgakd6o.us-east-1.rds.amazonaws.com"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shipping-svc
+spec:
+  selector:
+    app: shipping
+  ports:
+    - protocol: TCP
+      port: 8080          # port no that your service has to listern and this is the port you will access
+      targetPort: 8080  # Target port forwards the request to the backebd pod
+
+---
+
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: shipping-ingress
+spec:
+  rules:
+  - host: robot-frontend.b54-roboshop.in
+    http:
+      paths:
+      - path: "/"
+        pathType: Prefix
+        backend: 
+          service:
+            name: shipping-svc
+            port:
+              number: 8080
+  ingressClassName: nginx
+
+---
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: shipping-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: shipping
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      targetAverageUtilization: 75
