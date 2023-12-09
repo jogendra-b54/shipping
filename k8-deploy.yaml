@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: shipping
-        image: 164910480407.dkr.ecr.us-east-1.amazonaws.com/shipping:009
+        image: 164910480407.dkr.ecr.us-east-1.amazonaws.com/shipping:011
         ports:
         - containerPort: 8080
         envFrom:
