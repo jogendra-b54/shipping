@@ -1,4 +1,3 @@
-#creates Replicaset
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,11 +5,7 @@ metadata:
   labels:
     app: shipping
 spec:
-  replicas: 3
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 20
+  replicas: 1
   selector:
     matchLabels:
       app: shipping
@@ -26,55 +21,35 @@ spec:
         - containerPort: 8080
         envFrom:
           - configMapRef:
-                name: shipping-configmap
+              name: shipping-configmap
 
+--- 
 
----
-
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: shipping-configmap
-data:
-  CART_ENDPOINT: "cart-svc:8080"
-  DB_HOST: "terraform-20231208055823687600000002.cecqgmgakd6o.us-east-1.rds.amazonaws.com"
-
----
 apiVersion: v1
 kind: Service
 metadata:
   name: shipping-svc
 spec:
   selector:
-    app: shipping
+   app: shipping
   ports:
     - protocol: TCP
-      port: 8080          # port no that your service has to listern and this is the port you will access
-      targetPort: 8080  # Target port forwards the request to the backebd pod
+      port: 8080              # Port number of the service that it has to listen on 
+      targetPort: 8080        # Port number of the container that it has to forward to
 
----
+--- 
 
-
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  name: shipping-ingress
-spec:
-  rules:
-  - host: robot-frontend.b54-roboshop.in
-    http:
-      paths:
-      - path: "/"
-        pathType: Prefix
-        backend: 
-          service:
-            name: shipping-svc
-            port:
-              number: 8080
-  ingressClassName: nginx
+  name: shipping-configmap
+data:
+  CART_ENDPOINT: "cart-svc"  
+  DB_HOST: "robot-dev-mysql.ciqb6xvrbz0q.us-east-1.rds.amazonaws.com" 
 
----
-apiVersion: autoscaling/v2beta1
+--- 
+
+apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:
   name: shipping-hpa
@@ -83,10 +58,12 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: shipping
-  minReplicas: 3
-  maxReplicas: 10
+  minReplicas: 2
+  maxReplicas: 5
   metrics:
   - type: Resource
     resource:
       name: cpu
-      targetAverageUtilization: 75
+      target:
+        type: Utilization
+        averageUtilization: 75
