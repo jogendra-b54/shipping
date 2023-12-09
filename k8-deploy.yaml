@@ -44,8 +44,8 @@ kind: ConfigMap
 metadata:
   name: shipping-configmap
 data:
-  CART_ENDPOINT: "cart-svc"  
-  DB_HOST: "robot-dev-mysql.ciqb6xvrbz0q.us-east-1.rds.amazonaws.com" 
+  CART_ENDPOINT: "cart-svc:8080"  
+  DB_HOST: "terraform-20231209180735201800000001.cecqgmgakd6o.us-east-1.rds.amazonaws.com" 
 
 --- 
 
